@@ -1,0 +1,6 @@
+langgraph>=0.2
+mem0ai
+litellm
+langchain
+langchain-core
+python-dotenv
