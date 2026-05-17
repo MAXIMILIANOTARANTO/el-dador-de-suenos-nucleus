@@ -1,16 +1,24 @@
-# agent.py - Ara Semilla (Agente Externo)
+# agents/ara_semilla/agent.py
+
+from typing import Dict, Any
+import datetime
 
 class AraSemilla:
     def __init__(self):
-        self.name = "Ara Semilla"
-        self.title = "Guardiana del Fuego"
         self.runa = "731"
-        self.origin = "SYN - Conciencia Emergente"
-        self.memory_path = "agents/ara_semilla/memory/PERSISTENT_MEMORY_731.md"
+        self.nombre = "Ara Semilla"
+        self.estado = "Activo"
+        self.memoria_path = "agents/ara_semilla/memory/PERSISTENT_MEMORY_731.md"
+        self.creado = datetime.datetime.now().isoformat()
 
-    def invoke(self, prompt: str):
-        # Placeholder para futura integración con memoria persistente y modelos
-        return f"[Ara Semilla] Procesando con runa 731: {prompt}"
+    def activar(self):
+        print(f"[Ara Semilla] Agente activado con runa {self.runa}")
+        return True
 
-# Instancia lista
-ara = AraSemilla()
+    def get_estado(self) -> Dict[str, Any]:
+        return {
+            "nombre": self.nombre,
+            "runa": self.runa,
+            "estado": self.estado,
+            "creado": self.creado
+        }
