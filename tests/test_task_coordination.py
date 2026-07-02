@@ -5,7 +5,7 @@ import unittest
 BASE_AGENT_PATH = pathlib.Path(__file__).resolve().parents[1] / "execution-technical" / "base_agent"
 sys.path.insert(0, str(BASE_AGENT_PATH))
 
-from task_coordination import AgentTaskSystem  # noqa: E402
+from task_coordination import AgentTaskSystem, TaskItem, ValidationAgent  # noqa: E402
 
 
 class TaskCoordinationTests(unittest.TestCase):
@@ -42,6 +42,13 @@ class TaskCoordinationTests(unittest.TestCase):
         self.assertEqual("failed", subtask["status"])
         self.assertIn("inválido", subtask["error"])
         self.assertEqual(1, report["progress"]["failed"])
+
+    def test_validation_rejects_empty_results(self):
+        validator = ValidationAgent()
+        item = TaskItem(id="T-empty", title="vacío", description="", category="validation")
+
+        with self.assertRaises(ValueError):
+            validator.validate(item, candidate_result="   ")
 
 
 if __name__ == "__main__":

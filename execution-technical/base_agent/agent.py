@@ -25,7 +25,7 @@ def build_agent():
     return workflow.compile()
 
 
-def build_task_system(user_id: str = "dador_de_suenos"):
+def build_task_system(user_id: str = "default_user"):
     """Crea el sistema de agentes especializados para división y coordinación."""
     return AgentTaskSystem(user_id=user_id)
 

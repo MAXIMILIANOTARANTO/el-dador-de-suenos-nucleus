@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 
+MAX_TITLE_LENGTH = 60
+
 try:
     from memory_config import get_memory_client
 except ImportError:  # pragma: no cover - fallback for isolated execution
@@ -44,7 +46,7 @@ class AnalysisAgent:
             items.append(
                 TaskItem(
                     id=f"T{index}",
-                    title=part[:60],
+                    title=part[:MAX_TITLE_LENGTH],
                     description=part,
                     category=category,
                     dependencies=dependencies,
@@ -107,10 +109,11 @@ class ValidationAgent:
     name = "validation"
 
     @staticmethod
-    def validate(item: TaskItem) -> str:
-        if not item.result.strip():
+    def validate(item: TaskItem, candidate_result: Optional[str] = None) -> str:
+        result = item.result if candidate_result is None else candidate_result
+        if not result.strip():
             raise ValueError(f"Resultado vacío para {item.id}")
-        if "error" in item.result.lower():
+        if "error" in result.lower():
             raise ValueError(f"Resultado inválido para {item.id}")
         return f"[validation] {item.id} validada"
 
@@ -118,7 +121,7 @@ class ValidationAgent:
 class AgentTaskSystem:
     def __init__(
         self,
-        user_id: str = "dador_de_suenos",
+        user_id: str = "default_user",
         memory_client: Optional[Any] = None,
         model_callable: Optional[Callable[..., str]] = None,
     ):
@@ -170,8 +173,7 @@ class AgentTaskSystem:
             elif item.assigned_agent == "orchestration":
                 item.result = f"[orchestration] Flujo definido para {item.id}"
             elif item.assigned_agent == "validation":
-                item.result = f"[validation-target] {item.description}"
-                item.result = self.validation_agent.validate(item)
+                item.result = self.validation_agent.validate(item, candidate_result=item.description)
             else:
                 item.result = self.execution_agent.execute(item)
                 validation = self.validation_agent.validate(item)
@@ -180,7 +182,7 @@ class AgentTaskSystem:
             item.status = "completed"
             self._report("orchestration", "subtask_completed", {"task_id": item.id})
             self._persist_memory(item)
-        except Exception as exc:  # noqa: BLE001
+        except (ValueError, RuntimeError, TypeError) as exc:
             item.error = str(exc)
             item.status = "failed"
             self._report("validation", "subtask_failed", {"task_id": item.id, "error": item.error})
