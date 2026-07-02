@@ -4,6 +4,7 @@
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Annotated
 import operator
+from task_coordination import AgentTaskSystem
 
 class AgentState(TypedDict):
     messages: Annotated[list, operator.add]
@@ -22,6 +23,11 @@ def build_agent():
     workflow.set_entry_point("call_model")
     workflow.add_edge("call_model", END)
     return workflow.compile()
+
+
+def build_task_system(user_id: str = "dador_de_suenos"):
+    """Crea el sistema de agentes especializados para división y coordinación."""
+    return AgentTaskSystem(user_id=user_id)
 
 # Uso
 # agent = build_agent()
