@@ -7,14 +7,20 @@ from typing import Any, Callable, Dict, List, Optional
 MAX_TITLE_LENGTH = 60
 
 try:
-    from memory_config import get_memory_client
+    from .memory_config import get_memory_client
 except ImportError:  # pragma: no cover - fallback for isolated execution
-    get_memory_client = None
+    try:
+        from memory_config import get_memory_client
+    except ImportError:  # pragma: no cover
+        get_memory_client = None
 
 try:
-    from model_router import get_model_response
+    from .model_router import get_model_response
 except ImportError:  # pragma: no cover - fallback for isolated execution
-    get_model_response = None
+    try:
+        from model_router import get_model_response
+    except ImportError:  # pragma: no cover
+        get_model_response = None
 
 
 @dataclass
@@ -111,9 +117,10 @@ class ValidationAgent:
     @staticmethod
     def validate(item: TaskItem, candidate_result: Optional[str] = None) -> str:
         result = item.result if candidate_result is None else candidate_result
-        if not result.strip():
+        result_text = (result or "").strip()
+        if not result_text:
             raise ValueError(f"Resultado vacío para {item.id}")
-        if "error" in result.lower():
+        if "error" in result_text.lower():
             raise ValueError(f"Resultado inválido para {item.id}")
         return f"[validation] {item.id} validada"
 
@@ -131,7 +138,7 @@ class AgentTaskSystem:
         self.execution_agent = ExecutionAgent(model_callable=model_callable or get_model_response)
         self.validation_agent = ValidationAgent()
         self.memory_client = memory_client
-        if self.memory_client is None and get_memory_client:
+        if self.memory_client is None and get_memory_client is not None:
             self.memory_client = get_memory_client(user_id=user_id)
         self.messages: List[Dict[str, Any]] = []
 
@@ -173,11 +180,12 @@ class AgentTaskSystem:
             elif item.assigned_agent == "orchestration":
                 item.result = f"[orchestration] Flujo definido para {item.id}"
             elif item.assigned_agent == "validation":
-                item.result = self.validation_agent.validate(item, candidate_result=item.description)
+                item.result = item.description or f"[validation] {item.id} validada"
+                self.validation_agent.validate(item)
             else:
                 item.result = self.execution_agent.execute(item)
-                validation = self.validation_agent.validate(item)
-                self._report("validation", "subtask_validated", {"task_id": item.id, "validation": validation})
+                self.validation_agent.validate(item)
+                self._report("validation", "subtask_validated", {"task_id": item.id, "validation": f"[validation] {item.id} validada"})
 
             item.status = "completed"
             self._report("orchestration", "subtask_completed", {"task_id": item.id})
