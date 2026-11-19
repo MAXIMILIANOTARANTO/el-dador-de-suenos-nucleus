@@ -22,6 +22,7 @@ execution-technical/
 │   ├── agent.py              # Agente base con LangGraph
 │   ├── memory_config.py      # Configuración de memoria persistente
 │   ├── model_router.py       # Soporte multi-modelo
+│   ├── task_coordination.py  # Sistema de agentes y división de tareas
 │   └── config/
 ├── colab_notebooks/
 │   └── base_execution.ipynb
@@ -36,3 +37,23 @@ execution-technical/
 4. Ejecuta en Colab o localmente.
 
 El Dador de Sueños puede usar esta base para prototipar arquitecturas que luego se integran al Núcleo.
+
+## Sistema de Agentes Especializados
+
+`task_coordination.py` agrega cuatro roles coordinados:
+- **AnalysisAgent**: examina y descompone tareas.
+- **OrchestrationAgent**: asigna, prioriza y coordina dependencias.
+- **ExecutionAgent**: materializa subtareas (con LiteLLM opcional).
+- **ValidationAgent**: valida resultados y reporta errores.
+
+Ejemplo rápido:
+
+```python
+from task_coordination import AgentTaskSystem
+
+system = AgentTaskSystem()
+report = system.run(
+    "Analizar requerimientos. Coordinar dependencias. Implementar solución. Validar pruebas."
+)
+print(report["progress"])
+```
